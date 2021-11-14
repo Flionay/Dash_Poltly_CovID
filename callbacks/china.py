@@ -1,36 +1,47 @@
 import json
 import sys
+import dash_bootstrap_components as dbc
+import pandas as pd
 import plotly.express as px
 import requests
+from dash import dash_table
+from dash import html
 from dash.dependencies import Input, Output
 from server import app
-import dash_bootstrap_components as dbc
-from dash import dcc
-from dash import html
-from dash import dash_table
-
-sys.path.append('/Users/angyi/PycharmProjects/CovIdVis')
+import os
+from config import Config
+from models.db import client
 from models.data_dump import china_province, china_city, china_all
+import pandas as pd
+import numpy as np
 
 
 def china():
-    province_today_data, province_hist_data = china_province()
-    token = open("./utils/mapbox").read()  # you will need your own token
+    with client:
+        db = client.covId
+        updatetime = db.time.find_one({"_id": 1})['time']
+        province_today_data = db.data.find_one({"time": updatetime})['province_today_data']
 
-    with open('./data/china_province.geojson', 'r') as response:
+    # 中国地图geojson
+    with open(os.path.join(Config.jsonPath, 'china_province.geojson'), 'r') as response:
         provinces_map = json.load(response)
 
     # counties = json.load('./data/geojson.json')
-    df = province_today_data
+    df = pd.read_json(province_today_data)
     df['location'] = df.index
 
     fig = px.choropleth_mapbox(
         df,
         geojson=provinces_map,
         color='confirm',
-        hover_data={'wzz_add': True,  # remove species from hover data
-                    'location': True,  # customize hover for column of y attribute
+        hover_data={
+            'location': True,
+            "confirm": True,
+            "wzz_add": True
                     },
+        labels={'location': "地区",
+                "confirm": "累计确诊",
+                "wzz_add": "无症状感染者"},
         locations="location",
         opacity=0.5,
         featureidkey="properties.NL_NAME_1",
@@ -42,7 +53,7 @@ def china():
     #                               '<br> <b>确诊人数 </b>: %{z}<br>'+\
     #                               '<br> <b>治愈人数 </b>: %{text}<br>'
     fig.update_geos(showcountries=False, showcoastlines=False, showland=False, fitbounds="locations")
-    fig.update_layout(mapbox_style="light", mapbox_accesstoken=token,
+    fig.update_layout(mapbox_style="light", mapbox_accesstoken=Config.token,
                       mapbox_zoom=2.9, mapbox_center={"lat": 34.0902, "lon": 113.7129})
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
@@ -50,24 +61,16 @@ def china():
 
 
 def fig_province(province_text):
-    city_hist_data, city_today_data = china_city()
-    token = open("./utils/mapbox").read()  # you will need your own token
+    with client:
+        db = client.covId
+        updatetime = db.time.find_one({"_id": 1})['time']
+        city_today_data = db.data.find_one({"time": updatetime})['city_today_data']
+        # 从mongo中取该省份的geojson
+        province_geojson = db.province_geojson.find_one({"province_name": province_text})['geojson']
 
-    with open('./data/json/province.json', 'r') as response:
-        provinces_map = json.load(response)
-
-    # province_text = "山西省"
-
-    for pro in provinces_map:
-
-        if province_text in pro['name']:
-            province_code = pro['code']
-
-    response = requests.get(f"https://geo.datav.aliyun.com/areas_v3/bound/{province_code}_full.json")
-    province_geojson = response.json()
-
+    city_today_data = pd.read_json(city_today_data)
     df = city_today_data.loc[city_today_data['province'] == province_text]
-    df['location'] = df.index
+    df['location'] = df['city']
     # 匹配每个市的名字
     for city in province_geojson['features']:
         # json市一列 city['properties']['name']
@@ -84,26 +87,28 @@ def fig_province(province_text):
         df,
         geojson=province_geojson,
         color='confirm',
-        # hover_data={'wzz_add': True,  # remove species from hover data
-        #             'location': True,  # customize hover for column of y attribute
-        #             },
+        hover_data={
+            'location': True,
+            "nowConfirm": True,
+            "confirm": True,
+            'suspect': True,
+            "wzz": True
+                    },
+        labels={'location': "地区",
+                "nowConfirm": "当前确诊",
+                "confirm": "累计确诊",
+                'suspect': "疑似病例",
+                "wzz": "无症状感染者"},
+
         locations="location",
         # opacity=0.5,
         featureidkey="properties.name",
         # mapbox_style="Light and Dark",
         color_continuous_scale='Reds',
-        # customdata=np.vstack((df.地区, df.确诊, df.疑似, df.治愈, df.死亡)).T,
-        # hovertemplate="<b>%{customdata[0]}</b><br><br>"
-        # + "确诊：%{customdata[1]}<br>"
-        # + "疑似：%{customdata[2]}<br>"
-        # + "治愈：%{customdata[3]}<br>"
-        # + "死亡：%{customdata[4]}<br>"
-        # + "<extra></extra>",
-
     )
 
-    fig.update_layout(mapbox_style="light", mapbox_accesstoken=token,
-                      mapbox_zoom=5.9, mapbox_center={"lat": lat_center, "lon": lon_center})
+    fig.update_layout(mapbox_style="light", mapbox_accesstoken=Config.token,
+                      mapbox_zoom=5, mapbox_center={"lat": lat_center, "lon": lon_center})
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
 
@@ -230,9 +235,16 @@ def update_china_cardboard(n):
     Input(component_id="province-dropdown", component_property='value'),
 )
 def update_dashtable(province):
-    city_hist_data, city_today_data = china_city()
+    with client:
+        db = client.covId
+        updatetime = db.time.find_one({"_id": 1})['time']
+        city_total_data = db.data.find_one({"time": updatetime})['city_total_data']
+        # 从mongo中取该省份的geojson
+
+    # city_hist_data, city_today_data = china_city()
+    city_hist_data = pd.read_json(city_total_data)
     df = city_hist_data.loc[city_hist_data['province'] == province]
-    df['市区'] = df.index
+    df['市区'] = df['city']
 
     df.rename(
         columns={"province": "省份",
@@ -251,14 +263,15 @@ def update_dashtable(province):
         virtualization=True,
         style_cell={
             'font-family': 'Times New Roman',
-            'text-align': 'center'
+            'text-align': 'left',
+            # all three widths are needed
+            'minWidth': '70px', 'width': '100px', 'maxWidth': '130px',
         },
-        style_as_list_view=True,
+        # style_as_list_view=True,
         style_data_conditional=[
             {
                 'if': {
                     # 'column_id': 'grade',
-
                     # since using .format, escape { with {{
                     'filter_query': '{{地区}} contains {}'.format('风险')
                 },
@@ -270,18 +283,18 @@ def update_dashtable(province):
         style_header={
             'background-color': '#b3e5fc',
             'font-family': 'Times New Roman',
-            'font-weight': 'bolder',
+            'font-weight': 'bold',
             'font-size': '15px',
             'text-align': 'center'
         },
         style_data={
             'font-family': 'Times New Roman',
-            'text-align': 'left'
-        }
+            'text-align': 'center'
+        }, style_table={'height': '360px', 'overflowY': 'auto', 'overflowX': 'auto'}, page_size=10
     ), style={'border': '2px', "margin-top": "30px"})
 
 
 if __name__ == '__main__':
-    fig = fig_province('北京')
-    # fig = china()
+    # fig = fig_province('北京')
+    fig = china()
     fig.show()

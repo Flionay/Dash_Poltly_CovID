@@ -34,15 +34,15 @@ def get_hist_data():
 
 if __name__ == '__main__':
     last_data = get_last_data()
-    with open('../data/data_today.json', 'w') as f:
+    with open('../data/tencent/data_today.json', 'w') as f:
         json.dump(last_data, f)
 
     hist_data = get_hist_data()
-    with open('../data/hist_data.json', 'w') as f:
+    with open('../data/tencent/hist_data.json', 'w') as f:
         json.dump(hist_data,f)
 
     glob_data = get_global_data()
-    with open('../data/global_data.json', 'w') as f:
+    with open('../data/tencent/global_data.json', 'w') as f:
         json.dump(glob_data, f)
 
     
