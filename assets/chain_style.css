@@ -1,0 +1,14 @@
+.china_card_header{
+    font-size: 18px;
+    color: black;
+    text-align: center;
+    font-weight: bolder;
+}
+.china_card_data{
+    text-align: center;
+    font-size: 35px;
+
+}
+.china_card_footer{
+    text-align: center;
+}

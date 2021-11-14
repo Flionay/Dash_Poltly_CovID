@@ -1,21 +1,12 @@
 # 主要依赖
-import plotly.express as px  # (version 4.7.0)
-import plotly.graph_objects as go
-import dash  # (version 1.12.0) pip install dash
+import dash_bootstrap_components as dbc
 from dash import dcc
 from dash import html
-import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State
 
-import pandas as pd
-import numpy as np
-from datetime import date
-import os
-from callbacks.china import china, fig_province, update_province
+from callbacks.china import china
 
 # 最上方横条
 navbar = dbc.Navbar(
-
     dbc.Row([
         dbc.Col([
             dbc.Row(html.H3("疫情监控", style={'color': "white", 'fontWeight': 150}), style={"text-align": 'center'}),
@@ -27,26 +18,76 @@ navbar = dbc.Navbar(
     dark=True,
     expand=True,
 )
-province_items = [
-    dbc.DropdownMenuItem("Item 1"),
-    dbc.DropdownMenuItem("Item 2"),
-    dbc.DropdownMenuItem("Item 3"),
-]
+
+province_list = [
+    '台湾',
+    '黑龙江',
+    '香港',
+    '河北',
+    '甘肃',
+    '云南',
+    '辽宁',
+    '河南',
+    '上海',
+    '北京',
+    '广西',
+    '四川',
+    '广东',
+    '内蒙古',
+    '山东',
+    '宁夏',
+    '浙江',
+    '福建',
+    '陕西',
+    '天津',
+    '江西',
+    '青海',
+    '重庆',
+    '湖北',
+    '吉林',
+    '湖南',
+    '江苏',
+    '贵州',
+    '山西',
+    '澳门',
+    '海南',
+    '安徽',
+    '新疆',
+    '西藏', ]
 
 china_fig = dcc.Graph(id='china', figure=china())  # 右上
-card_china = html.Div([
-    dbc.CardHeader(html.H2("全国疫情", id="total_head")),
-    dbc.CardBody(id="china_total", style={"height": "200px"}),
-    dbc.DropdownMenu(
-        label="选择省份", children=province_items, className="mb-1", color="warning",
-    )
-])  # 左上
+
+card_china = dbc.Card([
+    dcc.Interval(
+        id='interval-component',
+        interval=60 * 1000 * 15,  # in milliseconds / refresh the webpage in every 60 seconds 15分钟
+        n_intervals=0
+    ),
+    dbc.CardHeader(html.Div([html.H3("全国疫情", style={"color": "#294c80"}),
+                             html.H6(id="update_time")])),
+    dbc.CardBody(
+        html.Div(id="china_card_total",
+                 )
+    ),
+
+], style={"margin-left": "30px"})  # 左上
 
 #  市地图
-province_fig = dcc.Graph(id='province', figure=fig_province())
+province_fig = dcc.Graph(id='province_fig', figure={}, style={"margin-left": "30px"})
 
 #  市区 表格
-table_province = html.Div(id="province_table", style={"height": "400px"})
+table_province = html.Div(id="province_table", style={"height": "400px", })
+
+province_card = dbc.Card([
+    dbc.CardHeader(html.H3("各省份疫情")),
+    dbc.CardBody([dcc.Dropdown(
+        id='province-dropdown',
+        options=[{'label': key, 'value': key} for key in province_list],
+        value='山西'
+    ),
+    table_province
+    ])]
+)
 
 layout_china = html.Div([
     navbar,
@@ -57,9 +98,9 @@ layout_china = html.Div([
     ]),
     html.Br(),
     dbc.Row([
-
         html.Hr(),
         dbc.Col([province_fig], lg={'size': 6, "order": 1}, align='center'),
-        dbc.Col([table_province], lg={'size': 6, "order": 2}, align='center')
+        dbc.Col([province_card],
+                lg={'size': 6, "order": 2}, align='center')
     ])
 ])

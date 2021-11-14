@@ -1,21 +1,21 @@
 import pymysql
 import pandas as pd
 import json
+import sys
+sys.path.append('/Users/angyi/PycharmProjects/CovIdVis')
 
-
-def data_proc():
-
+def china_all():
     with open('./data/data_today.json') as data_file:
         d = json.load(data_file)
 
-    # redis_pool = redis.ConnectionPool(host='127.0.0.1', port= 6379)
-    # redis_conn = redis.Redis(connection_pool= redis_pool)
-    # redis_conn.set(d['lastUpdateTime'],str(d))
-    # keys = d.keys()
-
     chinaTotal = pd.DataFrame(d['chinaTotal'], index=[d['lastUpdateTime']])
-
     chinaAdd = pd.DataFrame(d['chinaAdd'], index=[d['lastUpdateTime']])
+    return chinaTotal, chinaAdd
+
+
+def china_province():
+    with open('./data/data_today.json') as data_file:
+        d = json.load(data_file)
 
     # d[areaTree] 这个数据里第一层是国家的，children是每个省的,省里面第一层是省数据，里面还有children 是每个省的区县
     # 各个省的当前数据
@@ -32,7 +32,15 @@ def data_proc():
         series = pd.Series(dicts, name=province['name'])
         province_hist_data = province_today_data.append(series)
 
+    return province_today_data, province_hist_data
+
+
+def china_city():
+
+    with open('./data/data_today.json') as data_file:
+        d = json.load(data_file)
     # 每个省 地区的总数据
+
     city_hist_data = pd.DataFrame()
     for province in d['areaTree'][0]['children']:
         cities = province['children']  # 省份的孩子
@@ -51,8 +59,13 @@ def data_proc():
             dicts['province'] = province['name']
             series = pd.Series(dicts, name=city['name'])
             city_today_data = city_hist_data.append(series)
-    return province_today_data, city_today_data, province_hist_data, city_hist_data, chinaTotal, chinaAdd
+
+    return city_hist_data, city_today_data
 
 
 if __name__ == '__main__':
-    province_today_data, city_today_data, province_hist_data, city_hist_data, chinaTotal, chinaAdd = data_proc()
+    chinaTotal, chinaAdd = china_all()
+    # province_today_data, province_hist_data = china_province()
+    # city_hist_data, city_today_data = china_city()
+    print(chinaTotal)
+
