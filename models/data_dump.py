@@ -2,12 +2,13 @@ import pymysql
 import pandas as pd
 import json
 import sys
-from config import Config
+
+import os
+import sys
+sys.path.append("/home/lighthouse/CovId/")
 
 from models.db import client
-import os
-
-
+from config import Config
 ##
 
 def china_all():

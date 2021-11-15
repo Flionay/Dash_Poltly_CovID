@@ -54,7 +54,7 @@ def china():
     #                               '<br> <b>治愈人数 </b>: %{text}<br>'
     fig.update_geos(showcountries=False, showcoastlines=False, showland=False, fitbounds="locations")
     fig.update_layout(mapbox_style="light", mapbox_accesstoken=Config.token,
-                      mapbox_zoom=2.9, mapbox_center={"lat": 34.0902, "lon": 113.7129})
+                      mapbox_zoom=2.9, mapbox_center={"lat": 40.0902, "lon": 100.7129})
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
     return fig
@@ -70,7 +70,7 @@ def fig_province(province_text):
 
     city_today_data = pd.read_json(city_today_data)
     df = city_today_data.loc[city_today_data['province'] == province_text]
-    df['location'] = df['city']
+    df.loc[:,'location'] = df['city'].copy()
     # 匹配每个市的名字
     for city in province_geojson['features']:
         # json市一列 city['properties']['name']
@@ -244,7 +244,7 @@ def update_dashtable(province):
     # city_hist_data, city_today_data = china_city()
     city_hist_data = pd.read_json(city_total_data)
     df = city_hist_data.loc[city_hist_data['province'] == province]
-    df['市区'] = df['city']
+    df.loc[:,'市区'] = df['city'].copy()
 
     df.rename(
         columns={"province": "省份",

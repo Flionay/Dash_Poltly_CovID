@@ -1,8 +1,8 @@
 class Config(object):
-    jsonPath = "/Users/angyi/PycharmProjects/CovIdVis/data/json"
-    dataPath = "/Users/angyi/PycharmProjects/CovIdVis/data"
-    tencentPath = "/Users/angyi/PycharmProjects/CovIdVis/data/tencent"
-    token = open("/Users/angyi/PycharmProjects/CovIdVis/utils/mapbox").read()
+    jsonPath = "/home/lighthouse/CovId/data/json"
+    dataPath = "/home/lighthouse/CovId/data"
+    tencentPath = "/home/lighthouse/CovId/data/tencent"
+    token = open("/home/lighthouse/CovId/utils/mapbox").read()
 
     DEBUG = False
     DATABASE_IP = '127.0.0.1'

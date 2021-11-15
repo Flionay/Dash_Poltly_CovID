@@ -1,0 +1,1 @@
+/home/lighthouse/mambaforge-pypy3/bin/python /home/lighthouse/CovId/models/data_dump.py>/home/lighthouse/CovId/models/log.log

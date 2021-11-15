@@ -1,8 +1,12 @@
 # 爬取每个省的geojson数据，存入mongo
 import json
 import requests
-from pymongo import MongoClient
 
+import sys
+sys.path.append("/home/lighthouse/CovId/")
+from models.db import client
+from config import Config
+import os 
 
 def get_geojson():
     province_list = [
@@ -40,7 +44,7 @@ def get_geojson():
         '安徽',
         '新疆',
         '西藏', ]
-    with open('../data/json/province.json', 'r') as response:
+    with open(os.path.join(Config.jsonPath,'province.json'), 'r') as response:
         provinces_map = json.load(response)
 
         # province_text = "山西省"
@@ -60,7 +64,6 @@ def get_geojson():
 
 
 if __name__ == '__main__':
-    client = MongoClient(host="127.0.0.1", port=27017, username="admin", password="123456")
     json_list = get_geojson()
     # 存入mongo
     with client:
