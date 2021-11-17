@@ -2,7 +2,7 @@ import pymysql
 import pandas as pd
 import json
 import sys
-
+import datetime
 import os
 import sys
 sys.path.append("/home/lighthouse/CovId/")
@@ -104,4 +104,6 @@ if __name__ == '__main__':
         db = client.covId
         db.time.replace_one({"_id": 1}, {"time": chinaTotal.index[0]})
         id = db.data.insert_one(data)
-        print(id)
+    print(f"更新于{datetime.datetime.now()}")
+    print("=============")
+    print(f"数据时间为{chinaTotal.index[0]}\n")
